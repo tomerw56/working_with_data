@@ -1,0 +1,102 @@
+{
+  "uid": "drone-demo",
+  "title": "Drone Telemetry Demo",
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 2,
+  "refresh": "5s",
+  "panels": [
+    {
+      "id": 1,
+      "type": "timeseries",
+      "title": "Altitude vs Time",
+      "datasource": { "type": "influxdb", "uid": "InfluxDB" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"drone\") |> range(start: -10m) |> filter(fn: (r) => r._measurement == \"drone_telemetry\") |> filter(fn: (r) => r._field == \"alt\")"
+        }
+      ],
+      "gridPos": { "x": 0, "y": 0, "w": 8, "h": 8 }
+    },
+    {
+      "id": 2,
+      "type": "timeseries",
+      "title": "Velocity Components",
+      "datasource": { "type": "influxdb", "uid": "InfluxDB" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"drone\") |> range(start: -10m) |> filter(fn: (r) => r._measurement == \"drone_telemetry\") |> filter(fn: (r) => r._field == \"vx\" or r._field == \"vy\" or r._field == \"vz\")"
+        }
+      ],
+      "gridPos": { "x": 8, "y": 0, "w": 8, "h": 8 }
+    },
+    {
+      "id": 3,
+      "type": "timeseries",
+      "title": "Speed (derived)",
+      "datasource": { "type": "influxdb", "uid": "InfluxDB" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"drone\") |> range(start: -10m) |> filter(fn: (r) => r._measurement == \"drone_telemetry\") |> filter(fn: (r) => r._field == \"vx\" or r._field == \"vy\" or r._field == \"vz\") |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\") |> map(fn: (r) => ({ r with _value: sqrt(x: r.vx * r.vx + r.vy * r.vy + r.vz * r.vz) })) |> keep(columns:[\"_time\",\"_value\",\"drone_id\"])"
+        }
+      ],
+      "gridPos": { "x": 16, "y": 0, "w": 8, "h": 8 }
+    },
+    {
+      "id": 4,
+      "type": "geomap",
+      "title": "Drone Positions (Live)",
+      "datasource": { "type": "influxdb", "uid": "InfluxDB" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"drone\") |> range(start: -1m) |> filter(fn: (r) => r._measurement == \"drone_telemetry\") |> filter(fn: (r) => r._field == \"lat\" or r._field == \"lon\") |> last() |> pivot(rowKey:[\"_time\"], columnKey:[\"_field\"], valueColumn:\"_value\")"
+        }
+      ],
+      "options": {
+        "view": { "id": "fit", "lat": 32.0, "lon": 34.8, "zoom": 12 },
+        "layers": [
+          {
+            "type": "markers",
+            "name": "drones",
+            "config": {
+              "showLegend": true,
+              "size": 8
+            }
+          }
+        ]
+      },
+      "gridPos": { "x": 0, "y": 8, "w": 16, "h": 9 }
+    },
+    {
+      "id": 5,
+      "type": "table",
+      "title": "Latest Drone Telemetry",
+      "datasource": { "type": "influxdb", "uid": "InfluxDB" },
+      "targets": [
+        {
+          "refId": "A",
+          "query": "from(bucket: \"drone\") |> range(start: -5m) |> filter(fn: (r) => r._measurement == \"drone_telemetry\") |> last()"
+        }
+      ],
+      "gridPos": { "x": 16, "y": 8, "w": 8, "h": 9 }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "drone",
+        "type": "query",
+        "datasource": { "type": "influxdb", "uid": "InfluxDB" },
+        "query": "import \"influxdata/influxdb/schema\"\n\nschema.tagValues(bucket: \"drone\", tag: \"drone_id\")",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true
+      }
+    ]
+  },
+  "time": { "from": "now-15m", "to": "now" }
+}
