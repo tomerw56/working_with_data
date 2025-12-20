@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+message DroneTelemetry {
+  uint32 drone_id = 1;
+  double lat = 2;
+  double lon = 3;
+  double alt = 4;
+  float vx = 5;
+  float vy = 6;
+  float vz = 7;
+}
