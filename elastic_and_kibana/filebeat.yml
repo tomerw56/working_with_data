@@ -1,0 +1,25 @@
+filebeat.inputs:
+  - type: filestream
+    enabled: true
+    paths:
+      - /var/log/app.log
+    parsers:
+      - multiline:
+          pattern: '^[[:space:]]'
+          match: after
+
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+output.elasticsearch:
+  hosts: ["http://elasticsearch:9200"]
+
+logging:
+  level: info
+  to_files: true
+  files:
+    path: /var/log/filebeat
+    name: filebeat
+    keepfiles: 7
+    permissions: 0644
